@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>P2P Protocol | Access Granted</title>
+    <link rel="icon" href="https://perrotsoft.github.io/img/ico1.png" type="image/x-icon"> 
+    <style>
+        :root {
+            --accent: #0078d4;
+            --mica: rgba(25, 25, 35, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #05050a url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2070') no-repeat center;
+            background-size: cover;
+            font-family: 'Segoe UI Variable', sans-serif;
+            color: white;
+            overflow: hidden;
+            transition: opacity 1s ease;
+        }
+
+        /* ТВОЙ СТИЛЬ ОКНА + АНИМАЦИЯ */
+        .window {
+            background: var(--mica);
+            backdrop-filter: blur(50px) saturate(170%);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 480px;
+            padding: 40px;
+            box-shadow: 0 0 80px rgba(0,0,0,0.8), 0 0 20px rgba(0, 120, 212, 0.2);
+            text-align: center;
+            position: relative;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } }
+
+        .logo-area {
+            width: 120px; height: 120px; margin: 0 auto 25px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        input, select {
+            width: 100%; padding: 14px; margin-bottom: 18px;
+            background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            border-radius: 8px; color: white; box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input:focus { border-bottom-color: var(--accent); background: rgba(0,0,0,0.7); outline: none; }
+
+        button {
+            width: 100%; padding: 16px; background: var(--accent);
+            color: white; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        button:hover { filter: brightness(1.2); box-shadow: 0 0 15px var(--accent); }
+
+        .sync-box {
+            background: rgba(0, 120, 212, 0.1); padding: 15px;
+            border-radius: 8px; margin-bottom: 20px;
+            border: 1px dashed var(--accent); font-family: 'Consolas', monospace;
+        }
+
+        .hidden { display: none !important; }
+
+        #cardCanvas { 
+            width: 100%; border-radius: 10px; margin-top: 20px; 
+            display: none; border: 1px solid var(--border);
+            animation: scan 2s linear infinite;
+        }
+
+        /* TELEGRAM PANEL */
+        #tg-panel {
+            position: fixed; right: -320px; top: 0; width: 320px; height: 100%;
+            background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(20px);
+            border-left: 1px solid var(--border); transition: 0.5s; z-index: 100;
+        }
+        #tg-panel.active { right: 0; }
+        .tg-btn {
+            position: absolute; left: -50px; top: 20px;
+            background: var(--accent); width: 50px; height: 50px;
+            border-radius: 10px 0 0 10px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="tg-panel">
+    <div class="tg-btn" onclick="document.getElementById('tg-panel').classList.toggle('active')">
+        <a id="gfgfg" href=""><img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" width="24"></a>
+    </div>
+    
+</div>
+
+<div class="window" id="mainContainer">
+    <div class="logo-area">
+        <img id="localImg" src="https://perrotsoft.github.io/img/ico.png" style="width: 100px;height: 100px;" onload="this.setAttribute('data-loaded', 'true')">
+    </div>
+
+    <div id="view-form">
+        <h2 style="font-weight: 300;">INITIALIZE NODE</h2>
+        <input type="text" id="userName" placeholder="SUBJECT_NAME">
+        <select id="groupSelect">
+            <option value="Krivan">Криван</option>
+            <option value="ParrotSoft’s Empire">ParrotSoft’s Empire</option>
+            <option value="Not Tegs">Not Tegs</option>
+        </select>
+        <input type="email" id="userEmail" placeholder="AUTH_EMAIL">
+        <button onclick="registerNode()">START PROTOCOL</button>
+    </div>
+
+    <div id="view-wait" class="hidden">
+        <h2 style="color:var(--accent)">WAITING FOR SYNC</h2>
+        <div class="sync-box">
+            TEMP_KEY: <span id="generatedCode" style="color:white; font-size:20px;"></span>
+        </div>
+        <input type="text" id="syncCode" placeholder="ENTER ADMIN KEY">
+        <button onclick="verifyAndSync()">SYNC NETWORK</button>
+    </div>
+
+    <div id="view-card" class="hidden">
+        <h2 style="color:#4caf50; letter-spacing: 2px;">SUCCESS</h2>
+        <canvas id="cardCanvas" width="600" height="850"></canvas>
+        <p id="redirectText" style="font-size: 12px; margin-top: 15px; color: #888;">Загрузка защищенного узла...</p>
+        <button onclick="downloadCard()" style="margin-top:10px; background:#1a1a1a; border: 1px solid #333;">DOWNLOAD PNG</button>
+    </div>
+</div>
+
+<script>
+    const ADMIN_MAIL = "zhenja.fedorenko.kr1@gmail.com";
+    let currentUser = {};
+    let tempCode = "";
+    let tgp = {
+        "Krivan": "https://t.me/+qzAGST9dNQBiMGY6",
+        "ParrotSoft’s Empire": "https://t.me/+o5LgZSW5PtEzNzEy",
+        "Not Tegs": "https://t.me/+obfFLzWY8cA4NmNi"
+    }
+    // Отрисовка временного лого
+    const lCtx = document.getElementById('logoPlaceholder').getContext('2d');
+    lCtx.strokeStyle = '#0078d4'; lCtx.lineWidth = 2; lCtx.beginPath();
+    lCtx.arc(60, 60, 52, 0, Math.PI*2); lCtx.stroke();
+    lCtx.fillStyle = '#0078d4'; lCtx.font = 'bold 24px Segoe UI'; lCtx.textAlign='center';
+    lCtx.fillText('P2P', 60, 68);
+
+    function registerNode() {
+        const name = document.getElementById('userName').value;
+        const email = document.getElementById('userEmail').value;
+        if(!name || !email) return alert("REQUIRED FIELDS EMPTY");
+
+        // 16-BIT HEX ID
+        const h = () => Math.floor(Math.random()*65536).toString(16).toUpperCase().padStart(4, '0');
+        const finalID = `${h()}-${h()}-${h()}`;
+        tempCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+        
+        currentUser = { name, group: document.getElementById('groupSelect').value, id: finalID };
+        document.getElementById('gfgfg').href = tgp[currentUser.group];
+        window.location.href = `mailto:${ADMIN_MAIL}?subject=SYNC_REQ&body=USER:${name}%0AID:${finalID}%0ACODE:${tempCode}`;
+
+        document.getElementById('generatedCode').innerText = tempCode;
+        document.getElementById('view-form').classList.add('hidden');
+        document.getElementById('view-wait').classList.remove('hidden');
+    }
+
+    function verifyAndSync() {
+        if(document.getElementById('syncCode').value.trim().toUpperCase() !== tempCode) return alert("AUTH FAILED");
+        
+        let net = JSON.parse(localStorage.getItem('p2p_net') || '[]');
+        net.push(currentUser);
+        localStorage.setItem('p2p_net', JSON.stringify(net));
+
+        document.getElementById('view-wait').classList.add('hidden');
+        document.getElementById('view-card').classList.remove('hidden');
+        
+        renderCard(currentUser, net);
+    }
+
+    function renderCard(user, net) {
+        const canvas = document.getElementById('cardCanvas');
+        canvas.style.display = "block";
+        const ctx = canvas.getContext('2d');
+        
+        ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, 600, 850);
+        ctx.fillStyle = '#0078d4'; ctx.fillRect(0, 0, 600, 15);
+
+        const img = document.getElementById('localImg');
+        if(img.getAttribute('data-loaded')) {
+            ctx.drawImage(img, 225, 100, 150, 150);
+        } else {
+            ctx.fillStyle = '#0078d4'; ctx.beginPath(); ctx.arc(300, 180, 60, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.font = 'bold 30px monospace'; ctx.textAlign='center'; ctx.fillText('NODE', 300, 195);
+        }
+
+        ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.font = '300 24px Segoe UI';
+        ctx.fillText('IDENTITY CERTIFICATE', 300, 320);
+
+        ctx.textAlign = 'left';
+        drawF(ctx, '16-BIT ENCRYPTION ID', user.id, 60, 420, '#0078d4');
+        drawF(ctx, 'SUBJECT', user.name.toUpperCase(), 60, 520);
+        drawF(ctx, 'ASSIGNED GROUP', user.group, 60, 620);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(40, 720, 520, 100);
+        ctx.fillStyle = '#555'; ctx.font = '12px Monospace'; ctx.fillText('NETWORK_HISTORY:', 60, 750);
+        net.slice(-2).reverse().forEach((n, i) => {
+            ctx.fillText(`> ${n.id} [VERIFIED]`, 60, 775 + (i*18));
+        });
+    }
+
+    function drawF(ctx, l, v, x, y, c = 'white') {
+        ctx.fillStyle = '#777'; ctx.font = '14px Segoe UI'; ctx.fillText(l, x, y);
+        ctx.fillStyle = c; ctx.font = 'bold 26px monospace'; ctx.fillText(v, x, y + 35);
+    }
+
+    function downloadCard() {
+        const link = document.createElement('a');
+        link.download = `ID_${currentUser.name}.png`;
+        link.href = document.getElementById('cardCanvas').toDataURL("image/png");
+        link.click();
+    }
+</script>
+</body>
+</html>
