@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>NETWORK HUB | Intelligence System</title>
+    <style>
+        :root {
+            --accent: #0078d4;
+            --danger: #ff4444;
+            --panel: rgba(10, 10, 15, 0.98);
+            --border: rgba(255, 255, 255, 0.15);
+            --glass: rgba(255, 255, 255, 0.08);
+            --success: #00ff88;
+        }
+
+        body {
+            margin: 0; height: 100vh; display: flex;
+            background: #020205 url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070') no-repeat center;
+            background-size: cover; font-family: 'Segoe UI', sans-serif; color: #e0e0e0; overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar { 
+            width: 280px; background: var(--panel); backdrop-filter: blur(50px);
+            border-right: 2px solid var(--border); display: flex; flex-direction: column; padding: 25px;
+        }
+
+        .user-profile {
+            background: linear-gradient(135deg, var(--accent), #003e6e);
+            width: 50px; height: 50px; border-radius: 12px; margin-bottom: 15px;
+            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-link { 
+            padding: 12px 15px; border-radius: 8px; cursor: pointer; display: flex; align-items: center;
+            gap: 12px; margin-bottom: 8px; transition: 0.2s; color: #bbb; border: 1px solid transparent;
+        }
+        .nav-link:hover { background: var(--glass); color: white; border-color: var(--border); }
+        .nav-link.active { background: rgba(0, 120, 212, 0.2); color: white; border-color: var(--accent); }
+
+        /* VIEWPORT */
+        .main { flex: 1; position: relative; }
+        .screen { position: absolute; inset: 0; display: flex; flex-direction: column; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header { padding: 20px 40px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); }
+        .content { flex: 1; overflow-y: auto; padding: 30px; }
+
+        /* CARDS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .card { 
+            background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; 
+            cursor: pointer; transition: 0.3s;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-3px); background: rgba(20, 20, 30, 0.98); }
+        .card.intel-card { border-left: 5px solid var(--success); }
+        .card.group-card { border-left: 5px solid var(--accent); }
+        .card.mission-card { border-left: 5px solid var(--danger); }
+
+        /* REACTION SYSTEM */
+        .msg-container { margin-bottom: 20px; display: flex; flex-direction: column; }
+        .msg-bubble { 
+            padding: 12px 18px; border-radius: 12px; border: 1px solid var(--border); 
+            background: rgba(255,255,255,0.05); position: relative;
+        }
+        .reactions { 
+            display: flex; gap: 10px; margin-top: 5px; font-size: 11px; 
+            opacity: 0.8; padding-left: 5px;
+        }
+        .react-btn { 
+            cursor: pointer; display: flex; align-items: center; gap: 4px; 
+            padding: 4px 8px; border-radius: 6px; background: var(--glass); 
+            border: 1px solid var(--border); transition: 0.2s;
+        }
+        .react-btn:hover { background: rgba(255,255,255,0.15); border-color: white; }
+
+        /* COMMENTS SUB-PANEL */
+        .comments-box {
+            margin-top: 8px; margin-left: 20px; padding-left: 15px;
+            border-left: 2px solid var(--accent); font-size: 12px;
+        }
+        .comment-item { margin-bottom: 5px; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 6px; }
+
+        /* UI ELEMENTS */
+        input, textarea { 
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--border); 
+            padding: 12px; color: white; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box;
+        }
+        .btn { 
+            background: var(--accent); color: white; border: 1px solid rgba(255,255,255,0.1); 
+            padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; 
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="user-profile" id="avatar">?</div>
+    <div style="margin-bottom: 30px;">
+        <div id="u-name" style="font-weight: bold; color: white;">AGENT</div>
+        <div style="font-size: 10px; color: var(--accent); font-weight: bold;">SECURITY LEVEL: ALPHA</div>
+    </div>
+
+    <div class="nav-link active" onclick="nav('intel', this)"><span>📡</span> ИСТОРИИ (КАНАЛЫ)</div>
+    <div class="nav-link" onclick="nav('groups', this)"><span>🌐</span> ОБЩИЕ ГРУППЫ</div>
+    <div class="nav-link" onclick="nav('missions', this)"><span>⚔️</span> СПЕЦОПЕРАЦИИ</div>
+    
+    <div style="flex:1"></div>
+    <button class="btn" style="background:var(--danger); width: 100%;" onclick="window.location.href='index.html'">ОТКЛЮЧИТЬСЯ</button>
+</div>
+
+<div class="main">
+    <div id="scr-intel" class="screen">
+        <div class="header"><h2>INTELLIGENCE_FEED</h2><button onclick="openMod('mod-intel')" class="btn">+ СОЗДАТЬ КАНАЛ</button></div>
+        <div class="content"><div id="intel-grid" class="grid"></div></div>
+    </div>
+
+    <div id="scr-groups" class="screen hidden">
+        <div class="header"><h2>NETWORK_GROUPS</h2><button onclick="openMod('mod-group')" class="btn">+ СОЗДАТЬ ГРУППУ</button></div>
+        <div class="content"><div id="groups-grid" class="grid"></div></div>
+    </div>
+
+    <div id="scr-missions" class="screen hidden">
+        <div class="header"><h2>CLASSIFIED_MISSIONS</h2><button onclick="openMod('mod-mission')" class="btn" style="background:var(--danger)">+ НОВАЯ МИССИЯ</button></div>
+        <div class="content"><div id="missions-grid" class="grid"></div></div>
+    </div>
+
+    <div id="scr-chat" class="screen hidden">
+        <div class="header">
+            <button onclick="goBack()" style="background:none; border:none; color:var(--accent); cursor:pointer;">← НАЗАД</button>
+            <h3 id="chat-title">PROJECT</h3>
+            <span id="chat-status-tag" style="font-size:10px; opacity:0.6">MODE: SECURE</span>
+        </div>
+        <div class="content" id="msg-box"></div>
+        <div id="chat-controls" style="padding:20px; border-top:1px solid var(--border); background:rgba(0,0,0,0.4)">
+            <div id="file-previews" style="display:flex; gap:10px; margin-bottom:10px;"></div>
+            <div style="display:flex; gap:10px;">
+                <label style="background:var(--glass); padding:10px; border:1px solid var(--border); border-radius:8px; cursor:pointer">📎<input type="file" id="files-in" multiple class="hidden"></label>
+                <input type="text" id="msg-input" placeholder="Передача данных..." style="margin:0">
+                <button onclick="sendMsg()" class="btn">SEND</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mod-comment" class="modal-overlay hidden">
+    <div class="modal">
+        <h3>КОММЕНТИРОВАТЬ</h3>
+        <textarea id="comm-text" placeholder="Ваш комментарий к записи..."></textarea>
+        <button class="btn" id="save-comment">ОТПРАВИТЬ</button>
+        <button onclick="closeMod()" style="background:none; border:none; color:#777; width:100%; margin-top:10px; cursor:pointer;">ОТМЕНА</button>
+    </div>
+</div>
+
+<div id="mod-intel" class="modal-overlay hidden"><div class="modal"><h3>НОВАЯ ИСТОРИЯ</h3><input type="text" id="int-name" placeholder="Название"><textarea id="int-desc" placeholder="Описание"></textarea><button class="btn" id="save-intel">СОЗДАТЬ</button><button onclick="closeMod()" style="background:none; border:none; width:100%; margin-top:10px; cursor:pointer;">ОТМЕНА</button></div></div>
+<div id="mod-group" class="modal-overlay hidden"><div class="modal"><h3>НОВАЯ ГРУППА</h3><input type="text" id="gr-name" placeholder="Название"><textarea id="gr-desc" placeholder="Описание"></textarea><button class="btn" id="save-group">СОЗДАТЬ</button></div></div>
+<div id="mod-mission" class="modal-overlay hidden"><div class="modal"><h3>НОВАЯ МИССИЯ</h3><input type="text" id="ms-name" placeholder="Кодовое имя"><div id="ms-user-picker" class="user-picker"></div><textarea id="ms-desc" placeholder="Инструкции..."></textarea><button class="btn" id="save-mission">АКТИВИРОВАТЬ</button></div></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, push, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCjzPoM1tvSPKkHvSm8WdMvre_IPRX82vg",
+        authDomain: "krivan-1f7bd.firebaseapp.com",
+        projectId: "krivan-1f7bd",
+        databaseURL: "https://krivan-1f7bd-default-rtdb.firebaseio.com",
+        storageBucket: "krivan-1f7bd.firebasestorage.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const userId = new URLSearchParams(window.location.search).get('id');
+    let user = null;
+    let activeChatPath = '';
+    let currentScreen = 'intel';
+    let currentTargetMsg = ''; 
+
+    onValue(ref(db, `users/${userId}`), (s) => {
+        user = s.val();
+        document.getElementById('avatar').innerText = user.name[0].toUpperCase();
+        document.getElementById('u-name').innerText = user.name.toUpperCase();
+    });
+
+    window.nav = (id, el) => {
+        currentScreen = id;
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`scr-${id}`).classList.remove('hidden');
+        if(el) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            el.classList.add('active');
+        }
+    };
+
+    window.goBack = () => nav(currentScreen);
+    window.openMod = (id) => document.getElementById(id).classList.remove('hidden');
+    window.closeMod = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+
+    // --- ЛОГИКА РЕАКЦИЙ ---
+    window.react = (msgKey, type) => {
+        const rRef = ref(db, `${activeChatPath}/${msgKey}/reactions/${type}`);
+        runTransaction(rRef, (current) => (current || 0) + 1);
+    };
+
+    window.openCommentMod = (msgKey) => {
+        currentTargetMsg = msgKey;
+        openMod('mod-comment');
+    };
+
+    document.getElementById('save-comment').onclick = () => {
+        const text = document.getElementById('comm-text').value;
+        if(!text) return;
+        push(ref(db, `${activeChatPath}/${currentTargetMsg}/comments`), {
+            user: user.name, text: text, time: Date.now()
+        });
+        document.getElementById('comm-text').value = '';
+        closeMod();
+    };
+
+    // --- ФУНКЦИИ СОЗДАНИЯ (Intel/Group/Mission) ---
+    document.getElementById('save-intel').onclick = () => {
+        push(ref(db, 'hub/intel'), { name: document.getElementById('int-name').value, desc: document.getElementById('int-desc').value, author: user.name, ownerId: userId });
+        closeMod();
+    };
+    // ... (group и mission аналогично)
+
+    // --- РЕНДЕР СПИСКОВ ---
+    const loadList = (path, gridId) => {
+        onValue(ref(db, `hub/${path}`), (snap) => {
+            const grid = document.getElementById(gridId); grid.innerHTML = '';
+            snap.forEach(child => {
+                const data = child.val();
+                if(path === 'missions' && (!data.access || !data.access.includes(userId))) return;
+                const card = document.createElement('div');
+                card.className = `card ${path}-card`;
+                card.innerHTML = `<h4>${data.name}</h4><p style="font-size:11px; opacity:0.6">${data.desc}</p>`;
+                card.onclick = () => openThread(path, child.key, data);
+                grid.appendChild(card);
+            });
+        });
+    };
+    loadList('intel', 'intel-grid'); loadList('groups', 'groups-grid'); loadList('missions', 'missions-grid');
+
+    // --- РЕНДЕР СООБЩЕНИЙ С РЕАКЦИЯМИ ---
+    function openThread(path, id, data) {
+        activeChatPath = `hub/${path}/${id}/msgs`;
+        document.getElementById('chat-title').innerText = data.name.toUpperCase();
+        nav('chat');
+
+        const isIntel = path === 'intel';
+        const isOwner = data.ownerId === userId;
+        document.getElementById('chat-controls').classList.toggle('hidden', isIntel && !isOwner);
+
+        onValue(ref(db, activeChatPath), (snap) => {
+            const box = document.getElementById('msg-box'); box.innerHTML = '';
+            snap.forEach(mSnap => {
+                const m = mSnap.val();
+                const mKey = mSnap.key;
+                const isMe = m.uid === userId;
+                
+                const cont = document.createElement('div');
+                cont.className = 'msg-container';
+                cont.style.alignItems = isMe ? 'flex-end' : 'flex-start';
+
+                let commentsHtml = '';
+                if(m.comments) {
+                    commentsHtml = `<div class="comments-box">`;
+                    Object.values(m.comments).forEach(c => {
+                        commentsHtml += `<div class="comment-item"><b>${c.user}:</b> ${c.text}</div>`;
+                    });
+                    commentsHtml += `</div>`;
+                }
+
+                cont.innerHTML = `
+                    <div style="font-size:9px; color:var(--accent); margin-bottom:3px;">${m.user}</div>
+                    <div class="msg-bubble" style="background:${isMe?'rgba(0,120,212,0.2)':'var(--glass)'}">
+                        ${m.text}
+                        ${m.files ? m.files.map(f => f.type.includes('image') ? `<img src="${f.data}" style="max-width:200px; display:block; margin-top:10px;">` : '').join('') : ''}
+                    </div>
+                    <div class="reactions">
+                        <div class="react-btn" onclick="react('${mKey}', 'like')">👍 ${m.reactions?.like || 0}</div>
+                        <div class="react-btn" onclick="react('${mKey}', 'dislike')">👎 ${m.reactions?.dislike || 0}</div>
+                        <div class="react-btn" onclick="openCommentMod('${mKey}')">💬 ${(m.comments ? Object.keys(m.comments).length : 0)}</div>
+                    </div>
+                    ${commentsHtml}
+                `;
+                box.appendChild(cont);
+            });
+            box.scrollTop = box.scrollHeight;
+        });
+    }
+
+    // --- ОТПРАВКА ---
+    window.sendMsg = () => {
+        const text = document.getElementById('msg-input').value;
+        if(!text) return;
+        push(ref(db, activeChatPath), { uid: userId, user: user.name, text, time: Date.now() });
+        document.getElementById('msg-input').value = '';
+    };
+
+</script>
+</body>
+</html>
